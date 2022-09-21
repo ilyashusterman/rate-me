@@ -1,8 +1,8 @@
 import React from "react";
 import logo from "./logo.svg";
+import { Counter } from "./features/counter/Counter";
 import "./App.css";
 import FacebookLoginButton from "./features/login/FacebookLoginButton";
-import SearchUser from "./features/search/SearchUser";
 
 const App = () => {
   return (
@@ -10,7 +10,6 @@ const App = () => {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <FacebookLoginButton />
-        <SearchUser />
       </header>
     </div>
   );
