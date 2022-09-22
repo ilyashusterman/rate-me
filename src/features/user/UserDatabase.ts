@@ -1,14 +1,9 @@
-import { fetchSpreadSheetJson } from "../google-spreadsheet"
+import { SpreadSheetDatabase } from "../database/SpreadSheetDatabase"
 
-export class UserDatabase {
-    private spreadSheetId: string
-    private gid: string
-    constructor(spreadSheetId: string, gid: string) {
-        this.spreadSheetId = spreadSheetId
-        this.gid = gid
-    }
+export class UserDatabase extends SpreadSheetDatabase {
+
     async getUsers() {
-        return await fetchSpreadSheetJson(this.spreadSheetId, this.gid)
+        return await this.getRecords();
     }
     isUserExist(userId: string, users: Array<any>): boolean {
         const user = users.find((user: any) => {
@@ -17,7 +12,7 @@ export class UserDatabase {
             }
             return user.user_id === userId;
         });
-        if (user && user !== null && user !== undefined) {
+        if (user !== null && user !== undefined) {
             return true;
         }
         return false;

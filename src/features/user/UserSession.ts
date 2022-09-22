@@ -1,8 +1,7 @@
-export interface UserSessionObj {
-    userID: string
-    picture: string
-    email: string
-    name: string
+import SHA256 from 'crypto-js/sha256';
+import { UserRate } from './user';
+
+export interface UserSessionObj extends UserRate {
     response: any
 }
 
@@ -16,10 +15,19 @@ export class UserSession {
         if (!item) {
             return undefined
         }
-        return JSON.parse(item)
+        const user = JSON.parse(item);
+        return user
     }
     saveUser(user: UserSessionObj) {
+        user.email = UserSession.encryptString(user.email)
         const serializedUser = JSON.stringify(user)
         sessionStorage.setItem(this.storageKey, serializedUser);
+    }
+    static encryptString(content: string): any {
+        const hashed = SHA256(content).toString()
+        return hashed
+    }
+    removeUser() {
+        sessionStorage.removeItem(this.storageKey);
     }
 }

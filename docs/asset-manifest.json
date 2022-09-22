@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/rate-me/static/css/main.9071bff3.css",
-    "main.js": "/rate-me/static/js/main.e0df8601.js",
+    "main.js": "/rate-me/static/js/main.5c78d769.js",
     "static/js/787.ea11cbe7.chunk.js": "/rate-me/static/js/787.ea11cbe7.chunk.js",
     "static/media/logo.svg": "/rate-me/static/media/logo.b2e5a01e505f739f1484b881277d5186.svg",
     "index.html": "/rate-me/index.html",
     "main.9071bff3.css.map": "/rate-me/static/css/main.9071bff3.css.map",
-    "main.e0df8601.js.map": "/rate-me/static/js/main.e0df8601.js.map",
+    "main.5c78d769.js.map": "/rate-me/static/js/main.5c78d769.js.map",
     "787.ea11cbe7.chunk.js.map": "/rate-me/static/js/787.ea11cbe7.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.9071bff3.css",
-    "static/js/main.e0df8601.js"
+    "static/js/main.5c78d769.js"
   ]
 }

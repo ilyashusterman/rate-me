@@ -1,13 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import FacebookLogin from "react-facebook-login";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { FormUpload } from "../database/FormUpload";
+import { UserSession, UserSessionObj } from "../user/UserSession";
+import { GreetingUser } from "./GeetingUser";
 import {
+  getUsers,
   getUsersAsync,
   isUserExist,
   saveUser,
+  selectIsLoggedIn,
   selectUser,
   selectUsers,
-} from "./loginSlice";
+} from "./userSlice";
 
 const imageToDataURL = (url: string): any => {
   return fetch(url)
@@ -36,27 +41,23 @@ const FacebookLoginButton = () => {
   const inputForm: any = useRef();
   const submitNewUser = async (inputForm: any) => {
     setTimeout(async () => {
-      const formDataParams: any = new FormData(inputForm.current);
-      const formData = new URLSearchParams();
-      for (const pair of formDataParams) {
-        formData.append(pair[0], pair[1]);
-      }
-      await fetch(inputForm.current.action, {
-        method: inputForm.current.method,
-        body: formData,
-        cache: "no-cache",
-        mode: "no-cors",
-      });
+      const uploadForm = new FormUpload(inputForm);
+      await uploadForm.submit();
     }, 50);
   };
   const responseFacebook = async (response: any) => {
+    const newUsers = await getUsers();
     const url = response?.picture?.data.url;
     const data: string = await imageToDataURL(url);
+    const responseUserId = response.id || response.userID;
     await setName(response.name);
-    await setEmail(response.email);
-    await setUserID(response.userID);
+    await setEmail(UserSession.encryptString(response.email));
+    await setUserID(responseUserId);
     await setPicture(data);
-    if (!isUserExist(response.userID, users)) {
+    if (
+      !isUserExist(responseUserId, users) &&
+      !isUserExist(responseUserId, newUsers)
+    ) {
       await submitNewUser(inputForm);
     }
     dispatch(saveUser({ response: response, picture: data }));
@@ -68,20 +69,12 @@ const FacebookLoginButton = () => {
       setPicture(loadedUser.picture);
       setName(loadedUser.name);
       setEmail(loadedUser.email);
-      setUserID(loadedUser.userID);
+      setUserID(loadedUser.user_id);
       setIsFaceBookButtonDisabled(true);
     }
   }, []);
-  const getFaceBookButtonOrHello = () => {
-    if (isFaceBookButtonDisabled) {
-      return (
-        <>
-          <p>hello {name}</p>
-          <img src={picture} />
-        </>
-      );
-    }
-    return (
+  return (
+    <>
       <FacebookLogin
         appId="802173514313355"
         autoLoad={true}
@@ -89,11 +82,6 @@ const FacebookLoginButton = () => {
         callback={responseFacebook}
         isDisabled={isFaceBookButtonDisabled}
       />
-    );
-  };
-  return (
-    <>
-      {getFaceBookButtonOrHello()}
       <form
         action="https://docs.google.com/forms/d/e/1FAIpQLSd3ngW5O6lCczGXG_2Le9xWn4zT9EQ3PgR4dupjEsTbUy1fAw/formResponse"
         target="_self"
