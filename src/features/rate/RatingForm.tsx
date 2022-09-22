@@ -67,7 +67,7 @@ export const RatingForm = ({
   useEffect(() => {
     setRatingKeyVal("user_id_from", userIdFrom);
     setRatingKeyVal("user_id_to", userIdTo);
-    dispatch(getRateUserAsync({ userIdFrom, userIdTo }));
+    dispatch(getRateUserAsync({ userIdFrom, userIdTo, setRating }));
   }, [userIdFrom, userIdTo]);
   return (
     <>
