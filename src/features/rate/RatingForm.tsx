@@ -5,6 +5,7 @@ import {
   selectRating,
   UserRating,
   getRateUser,
+  setRatingSelect,
 } from "./rateSlice";
 
 import Stack from "@mui/material/Stack";
@@ -25,17 +26,20 @@ export const RatingForm = ({
 }: RatingFormInput) => {
   const dispatch = useAppDispatch();
   const ratingBase: any = useAppSelector(selectRating);
+  console.log(`ratingBase=${JSON.stringify(ratingBase)}`);
   const [rating, setRating] = useState<UserRating>(ratingBase);
   const inputForm: any = useRef();
-  const setRatingKeyVal = async (key: string, value: any) => {
+  const setRatingKeyVal = (key: string, value: any) => {
     const newObj = { ...rating, [key]: value };
     setRating(newObj);
     return newObj;
   };
-  const setRatingKeyValAsync = async (key: string, value: any) => {
+  const setRatingKeyValDispatch = (key: string, value: any) => {
     const newRate = setRatingKeyVal(key, value);
-    console.log(`newRate=${JSON.stringify(newRate)}`);
-    dispatch(rateUserAsync({ rate: newRate, formRef: inputForm }));
+    setTimeout(() => {
+      dispatch(rateUserAsync({ rate: newRate, formRef: inputForm }));
+      dispatch(setRatingSelect(newRate));
+    }, 100);
   };
   const getReverseBoolean = (value: any) => {
     if (value === "") {
@@ -43,9 +47,6 @@ export const RatingForm = ({
     }
     return "";
   };
-  const ratingInput = Object.entries(rating).filter(
-    ([key, value]) => !key.includes("user_id") && !(key === "comment")
-  );
   const getLikeButton = (key: string, value: any) => {
     return (
       <Stack key={key} direction="row" spacing={1}>
@@ -54,7 +55,7 @@ export const RatingForm = ({
           aria-label={`like ${key}`}
           onClick={async () => {
             const reverseValue = getReverseBoolean(value);
-            await setRatingKeyValAsync(key, reverseValue);
+            setRatingKeyValDispatch(key, reverseValue);
           }}
         >
           {key}
