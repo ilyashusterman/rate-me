@@ -2,14 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import FacebookLogin from "react-facebook-login";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { FormUpload } from "../database/FormUpload";
-import { UserSession, UserSessionObj } from "../user/UserSession";
-import { GreetingUser } from "./GeetingUser";
+import { UserSession } from "../user/UserSession";
 import {
   getUsers,
   getUsersAsync,
   isUserExist,
   saveUser,
-  selectIsLoggedIn,
   selectUser,
   selectUsers,
 } from "./userSlice";

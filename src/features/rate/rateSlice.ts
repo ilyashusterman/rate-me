@@ -55,9 +55,19 @@ const initialRate = (user_id_from: string, user_id_to: string): UserRating => {
   };
 };
 
+const RATE_NONE_KEYS = ["Timestamp", "date", "Score"];
+
+const cleanRate = (rate: any) => {
+  return Object.entries(rate).reduce((initialValue: any, [key, value]) => {
+    if (!RATE_NONE_KEYS.includes(key)) {
+      initialValue[key] = value;
+    }
+    return initialValue;
+  }, {});
+};
 const initialState: RateState = {
   user: undefined,
-  rate: initialRate("", ""),
+  rate: initialRate("None", "None"),
   status: "idle",
   response: "idle",
 };
@@ -75,35 +85,39 @@ export const dateStringToTimestamp = (dateString: any) => {
   const date = eval("new " + dateString);
   return date.getTime();
 };
+interface RateInput {
+  userIdFrom: string;
+  userIdTo: string;
+}
+export const getRateUser = async ({ userIdFrom, userIdTo }: RateInput) => {
+  const rates = await ratingDatabase.getRecords();
+  const df = new DataFrame(rates);
+  /* @ts-ignore */
+  const ratesDates = df.map((row: any) =>
+    row.set("date", dateStringToTimestamp(row.get("Timestamp")))
+  );
+  const sorted = ratesDates.sortBy(["date"], false);
+  /* @ts-ignore */
+  const filtered = sorted.filter((row) => {
+    const user_id_from = row.get("user_id_from");
+    const user_id_to = row.get("user_id_to");
+    if (user_id_from === userIdFrom && user_id_to === userIdTo) {
+      return true;
+    }
+    return false;
+  });
+  const tail = filtered.tail(1);
+  const items = tail.toCollection();
+  if (!items) {
+    return undefined;
+  }
+  const item = items[0];
+  return cleanRate(item);
+};
 export const getRateUserAsync = createAsyncThunk(
   "rate/getRateUser",
-  async (props: any) => {
-    const { userIdFrom, userIdTo } = props;
-    const rates = await ratingDatabase.getRecords();
-    const df = new DataFrame(rates);
-    /* @ts-ignore */
-    const ratesDates = df.map((row: any) =>
-      row.set("date", dateStringToTimestamp(row.get("Timestamp")))
-    );
-    /* @ts-ignore */
-    const filtered = df.filter((row) => {
-      const user_id_from = row.get("user_id_from");
-      const user_id_to = row.get("user_id_to");
-      if (user_id_from !== userIdFrom) {
-        return false;
-      }
-      if (user_id_to !== userIdTo) {
-        return false;
-      }
-      return true;
-    });
-    const tail = filtered.tail(1);
-    const items = tail.toCollection();
-    if (!items) {
-      return undefined;
-    }
-    const item = items[0];
-    return item;
+  async (props: RateInput) => {
+    return await getRateUser(props);
   }
 );
 
@@ -114,6 +128,9 @@ export const rateSlice = createSlice({
     setRateUser: (state, action: PayloadAction<UserSessionObj | any>) => {
       state.user = action.payload;
     },
+    setRating: (state, action: PayloadAction<UserRating | any>) => {
+      state.rate = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -122,7 +139,6 @@ export const rateSlice = createSlice({
       })
       .addCase(rateUserAsync.fulfilled, (state, action) => {
         state.status = "idle";
-        // state.response = action.payload;
         state.response = "updated";
       })
       .addCase(rateUserAsync.rejected, (state) => {
@@ -130,12 +146,13 @@ export const rateSlice = createSlice({
       })
       .addCase(getRateUserAsync.fulfilled, (state, action) => {
         state.status = "idle";
-        state.rate = action.payload;
+        const rate = cleanRate(action.payload);
+        state.rate = rate;
       });
   },
 });
 
-export const { setRateUser } = rateSlice.actions;
+export const { setRateUser, setRating } = rateSlice.actions;
 
 // The function below is called a selector and allows us to select a value from
 // the state. Selectors can also be defined inline where they're used instead of

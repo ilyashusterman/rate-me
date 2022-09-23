@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { UserRate } from "../user/user";
 import {
-  getRateUserAsync,
   rateUserAsync,
   selectRating,
   UserRating,
+  getRateUser,
 } from "./rateSlice";
 
 import Stack from "@mui/material/Stack";
@@ -24,8 +24,8 @@ export const RatingForm = ({
   userIdTo,
 }: RatingFormInput) => {
   const dispatch = useAppDispatch();
-  const selectedRating = useAppSelector(selectRating);
-  const [rating, setRating] = useState<any>(selectedRating);
+  const ratingBase: any = useAppSelector(selectRating);
+  const [rating, setRating] = useState<UserRating>(ratingBase);
   const inputForm: any = useRef();
   const setRatingKeyVal = async (key: string, value: any) => {
     const newObj = { ...rating, [key]: value };
@@ -33,10 +33,9 @@ export const RatingForm = ({
     return newObj;
   };
   const setRatingKeyValAsync = async (key: string, value: any) => {
-    const newObj = setRatingKeyVal(key, value);
-    setTimeout(() => {
-      dispatch(rateUserAsync({ rate: rating, formRef: inputForm }));
-    }, 50);
+    const newRate = setRatingKeyVal(key, value);
+    console.log(`newRate=${JSON.stringify(newRate)}`);
+    dispatch(rateUserAsync({ rate: newRate, formRef: inputForm }));
   };
   const getReverseBoolean = (value: any) => {
     if (value === "") {
@@ -51,7 +50,7 @@ export const RatingForm = ({
     return (
       <Stack key={key} direction="row" spacing={1}>
         <IconButton
-          color={value === "1" ? "primary" : "default"}
+          color={value === "1" || value === 1 ? "primary" : "default"}
           aria-label={`like ${key}`}
           onClick={async () => {
             const reverseValue = getReverseBoolean(value);
@@ -67,11 +66,16 @@ export const RatingForm = ({
   useEffect(() => {
     setRatingKeyVal("user_id_from", userIdFrom);
     setRatingKeyVal("user_id_to", userIdTo);
-    dispatch(getRateUserAsync({ userIdFrom, userIdTo, setRating }));
   }, [userIdFrom, userIdTo]);
+  useEffect(() => {
+    getRateUser({ userIdFrom, userIdTo }).then((rate: any) => setRating(rate));
+  }, []);
   return (
     <>
-      {ratingInput.map(([key, value]) => {
+      {Object.entries(rating).map(([key, value]) => {
+        if (key.includes("user_id") || key === "comment") {
+          return undefined;
+        }
         return getLikeButton(key, value);
       })}
       {ratingUser.name}
