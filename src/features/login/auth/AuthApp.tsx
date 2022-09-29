@@ -17,32 +17,30 @@ export const AuthRoutes = ({
   return (
     <AuthProvider>
       <Routes>
-        <Route>
-          <Route
-            path="/login"
-            element={
-              <AlreadyAuthed>
-                <LoginAuthPage />
-              </AlreadyAuthed>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <AlreadyAuthed>
-                <AppSignUp />
-              </AlreadyAuthed>
-            }
-          />
-          <Route
-            path="/"
-            element={
-              <RequireAuth>
-                <AppPage />
-              </RequireAuth>
-            }
-          />
-        </Route>
+        <Route
+          path="/login"
+          element={
+            <AlreadyAuthed>
+              <LoginAuthPage />
+            </AlreadyAuthed>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <AlreadyAuthed>
+              <AppSignUp />
+            </AlreadyAuthed>
+          }
+        />
+        <Route
+          path="/*"
+          element={
+            <RequireAuth>
+              <AppPage />
+            </RequireAuth>
+          }
+        />
       </Routes>
     </AuthProvider>
   );
