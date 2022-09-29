@@ -1,16 +1,17 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import FacebookLogin from "react-facebook-login";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { FormUpload } from "../database/FormUpload";
+import { initialSignUpUser } from "../user/UserDatabase";
 import { UserSession } from "../user/UserSession";
 import {
-  getUsers,
-  getUsersAsync,
   isUserExist,
-  saveUser,
+  saveUserAsync,
+  saveUserSession,
   selectUser,
-  selectUsers,
 } from "./userSlice";
+import { Grid } from "@mui/material";
+import { User } from "../user/user";
+import { useNavigate } from "react-router-dom";
 
 const imageToDataURL = (url: string): any => {
   return fetch(url)
@@ -28,59 +29,53 @@ const imageToDataURL = (url: string): any => {
 
 const FacebookLoginButton = () => {
   const dispatch = useAppDispatch();
-  const [name, setName] = useState("");
-  const users = useAppSelector(selectUsers);
+  let navigate = useNavigate();
+  const [signUpUser, setSignUpUser] = useState<User>(initialSignUpUser());
   const loadedUser = useAppSelector(selectUser);
-  const [picture, setPicture] = useState("");
-  const [email, setEmail] = useState("");
-  const [userID, setUserID] = useState("");
   const [isFaceBookButtonDisabled, setIsFaceBookButtonDisabled] =
     useState(false);
-  const inputForm: any = useRef();
-  const submitNewUser = async (inputForm: any) => {
-    setTimeout(async () => {
-      const uploadForm = new FormUpload(inputForm);
-      await uploadForm.submit();
-    }, 50);
-  };
   const responseFacebook = async (response: any) => {
-    const newUsers = await getUsers();
     const url = response?.picture?.data.url;
-    const data: string = await imageToDataURL(url);
+    const picture: string = await imageToDataURL(url);
     const responseUserId = response.id || response.userID;
-    await setName(response.name);
-    await setEmail(UserSession.encryptString(response.email));
-    await setUserID(responseUserId);
-    await setPicture(data);
-    if (
-      !isUserExist(responseUserId, users) &&
-      !isUserExist(responseUserId, newUsers)
-    ) {
-      await submitNewUser(inputForm);
+    const newUser: User = {
+      ...signUpUser,
+      userId: responseUserId,
+      facebookImageUrl: url,
+      email: UserSession.encryptString(response.email),
+      name: response.name,
+      picture: picture,
+    };
+    setSignUpUser(newUser);
+    if (!(await isUserExist(responseUserId))) {
+      await dispatch(saveUserAsync(newUser));
     }
-    dispatch(saveUser({ response: response, picture: data }));
+    dispatch(saveUserSession(newUser));
     setIsFaceBookButtonDisabled(true);
+    navigate("/");
   };
   useEffect(() => {
-    dispatch(getUsersAsync());
     if (loadedUser) {
-      setPicture(loadedUser.picture);
-      setName(loadedUser.name);
-      setEmail(loadedUser.email);
-      setUserID(loadedUser.user_id);
       setIsFaceBookButtonDisabled(true);
     }
   }, []);
   return (
     <>
-      <FacebookLogin
-        appId="802173514313355"
-        autoLoad={true}
-        fields="name,email,picture"
-        callback={responseFacebook}
-        isDisabled={isFaceBookButtonDisabled}
-      />
-      <form
+      <Grid
+        container
+        direction="row"
+        justifyContent="center"
+        alignItems="center"
+      >
+        <FacebookLogin
+          appId="802173514313355"
+          fields="name,email,picture"
+          callback={responseFacebook}
+          // redirectUri={"./"}
+          isDisabled={isFaceBookButtonDisabled}
+        />
+      </Grid>
+      {/* <form
         action="https://docs.google.com/forms/d/e/1FAIpQLSd3ngW5O6lCczGXG_2Le9xWn4zT9EQ3PgR4dupjEsTbUy1fAw/formResponse"
         target="_self"
         id="userLoggedForm"
@@ -114,7 +109,7 @@ const FacebookLoginButton = () => {
           value={userID}
         />
         <input type="hidden" name="pageHistory" value="0" />
-      </form>
+      </form> */}
     </>
   );
 };

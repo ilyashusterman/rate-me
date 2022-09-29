@@ -1,10 +1,9 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
-import { DataFrame } from "../database/dataframe";
+import { DatabaseFB } from "../database/firebase";
 
-import { FormUpload } from "../database/FormUpload";
-import { SpreadSheetDatabase } from "../database/SpreadSheetDatabase";
-import { UserSessionObj } from "../user/UserSession";
+import { User } from "../user/user";
+
 
 export interface UserRating {
     good: "1" | "" | string;
@@ -23,19 +22,29 @@ export interface UserRating {
 }
 
 export interface RateState {
-    user: UserSessionObj | undefined;
+    user: User | undefined;
     rate: UserRating | undefined;
     status: "idle" | "loading" | "failed";
     response: "idle" | "updated";
 }
 
-//https://docs.google.com/spreadsheets/d/178RxwQdfTVrkcDavTDoNRUqddzNfk9MdOQWSUJMIt6M/edit#gid=1514002834
-//https://docs.google.com/spreadsheets/d/178RxwQdfTVrkcDavTDoNRUqddzNfk9MdOQWSUJMIt6M/edit?resourcekey#gid=1514002834
-const ratingDatabase = new SpreadSheetDatabase(
-    "178RxwQdfTVrkcDavTDoNRUqddzNfk9MdOQWSUJMIt6M",
-    "1514002834"
-);
+export class RatingDatabase extends DatabaseFB {
 
+    constructor() {
+        super("rates/")
+    }
+    async getRate(user_id_from: string, user_id_to: string) {
+        const endpoint = `${user_id_from}-${user_id_to}`;
+        return await this.getRecord(endpoint)
+    }
+    async saveRate(rate: UserRating) {
+        return await this.saveObj(`${this.endpoint}${rate.user_id_from}-${rate.user_id_to}`, rate)
+    }
+    async updateRate(rate: UserRating) {
+        return await this.updateObj(`${this.endpoint}${rate.user_id_from}-${rate.user_id_to}`, rate)
+    }
+}
+const ratingDatabase = new RatingDatabase();
 const initialRate = (user_id_from: string, user_id_to: string): UserRating => {
     return {
         good: "",
@@ -56,7 +65,7 @@ const initialRate = (user_id_from: string, user_id_to: string): UserRating => {
 
 const RATE_NONE_KEYS = ["Timestamp", "date", "Score"];
 
-const cleanRate = (rate: any) => {
+const cleanRate = (rate: any = undefined) => {
     return Object.entries(rate).reduce((initialValue: any, [key, value]) => {
         if (!RATE_NONE_KEYS.includes(key)) {
             initialValue[key] = value;
@@ -74,9 +83,16 @@ const initialState: RateState = {
 export const rateUserAsync = createAsyncThunk(
     "rate/rateUser",
     async (props: any) => {
-        const { rate, formRef } = props;
-        const formUpload = new FormUpload(formRef);
-        await formUpload.submit();
+        const { rate } = props;
+        const rateSaved = await ratingDatabase.saveRate(rate);
+        return "updated";
+    }
+);
+export const rateUserUpdateAsync = createAsyncThunk(
+    "rate/rateUserUpdate",
+    async (props: any) => {
+        const { rate } = props;
+        const rateSaved = await ratingDatabase.updateRate(rate);
         return "updated";
     }
 );
@@ -89,14 +105,24 @@ interface RateInput {
     userIdTo: string;
 }
 export const getRateUser = async ({ userIdFrom, userIdTo }: RateInput) => {
-    const rates = await ratingDatabase.getRecords();
-    const df = new DataFrame(rates);
-    const item = df.getLastUnique({
-        'user_id_from': userIdFrom,
-        'user_id_to': userIdTo
-    })
-    return cleanRate(item);
-};
+    const rate = await ratingDatabase.getRate(userIdFrom, userIdTo);
+    // if (rates.length === 1) {
+    //     return initialRate(userIdFrom, userIdTo)
+    // }
+    // const df = new DataFrame({ data: rates });
+    // const dfLoc = df.loc((row: any) => {
+    //     return (row.get('user_id_from') === userIdFrom) && (row.get('user_id_to') === userIdTo)
+    // })
+    // const dfUnique = dfLoc.dropDuplicates('user_id_from', 'user_id_to')
+    // const dfItems = dfUnique.toCollection()
+    // const item = dfItems[0]
+    // 
+    if (rate !== null) {
+        return cleanRate(rate);
+    }
+    return initialRate(userIdFrom, userIdTo)
+}
+
 export const getRateUserAsync = createAsyncThunk(
     "rate/getRateUser",
     async (props: RateInput) => {
@@ -108,7 +134,7 @@ export const rateSlice = createSlice({
     name: "rate",
     initialState,
     reducers: {
-        setRateUser: (state, action: PayloadAction<UserSessionObj | any>) => {
+        setRateUser: (state, action: PayloadAction<User | any>) => {
             state.user = action.payload;
         },
         setRatingSelect: (state, action: PayloadAction<UserRating | any>) => {

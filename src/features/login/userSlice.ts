@@ -1,12 +1,13 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AppThunk, RootState } from '../../app/store';
+import { RootState } from '../../app/store';
+import { User } from '../user/user';
 import { UserDatabase } from '../user/UserDatabase';
-import { UserSession, UserSessionObj } from '../user/UserSession';
+import { UserSession } from '../user/UserSession';
 
 
 
 export interface LoginState {
-    user: UserSessionObj | undefined;
+    user: User | undefined;
     users: Array<any>;
     statusUsers: 'idle' | 'loading' | 'failed';
     loggedIn: boolean;
@@ -14,10 +15,7 @@ export interface LoginState {
 
 export const userSession = new UserSession("rate_me_user_session");
 //https://docs.google.com/spreadsheets/d/18inUTVlf-RWZspSEBA7tw0_1o8XL_FlUbJvxqKu2-WY/edit#gid=1705778969
-const userDatabase = new UserDatabase(
-    "18inUTVlf-RWZspSEBA7tw0_1o8XL_FlUbJvxqKu2-WY",
-    "1705778969"
-);
+const userDatabase = new UserDatabase();
 
 const initialState: LoginState = {
     user: userSession.loadUser(),
@@ -29,27 +27,26 @@ const initialState: LoginState = {
 export const getUsers = async () => {
     return await userDatabase.getUsers()
 }
+export const saveUserAsync = createAsyncThunk(
+    'user/saveUser',
+    async (user: any) => {
+        const response = await userDatabase.saveUser(user);
+        return response;
+    }
+)
 export const getUsersAsync = createAsyncThunk(
     'user/getUsers',
     async () => {
-        const response = await userDatabase.getUsers();
+        const response = await getUsers();
         return response;
     }
 );
-export const isUserExist = (userId: string, users: Array<any>) => {
-    return userDatabase.isUserExist(userId, users)
+export const isUserExist = async (userId: string) => {
+    return await userDatabase.isUserExist(userId)
 }
-export const saveUser = createAsyncThunk(
-    'user/saveUser',
-    async (props: any) => {
-        const { response, picture } = props;
-        let user = {
-            name: response.name,
-            email: response.email,
-            user_id: response.userID,
-            picture: picture,
-            response: response,
-        }
+export const saveUserSession = createAsyncThunk(
+    'user/saveUserSession',
+    async (user: any) => {
         userSession.saveUser(user);
         return user;
     }
@@ -78,7 +75,7 @@ export const userSlice = createSlice({
             .addCase(getUsersAsync.rejected, (state) => {
                 state.statusUsers = 'failed';
             })
-            .addCase(saveUser.fulfilled, (state, action) => {
+            .addCase(saveUserSession.fulfilled, (state, action) => {
                 state.user = action.payload;
                 state.loggedIn = true;
             });

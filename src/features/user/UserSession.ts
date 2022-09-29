@@ -1,16 +1,13 @@
 import SHA256 from 'crypto-js/sha256';
-import { UserRate } from './user';
+import { User } from './user';
 
-export interface UserSessionObj extends UserRate {
-    response: any
-}
 
 export class UserSession {
     private storageKey: string
     constructor(storageKey: string = "rate_me_user_session") {
         this.storageKey = storageKey
     }
-    loadUser(): UserSessionObj | undefined {
+    loadUser(): User | undefined {
         const item = sessionStorage.getItem(this.storageKey)
         if (!item) {
             return undefined
@@ -18,8 +15,8 @@ export class UserSession {
         const user = JSON.parse(item);
         return user
     }
-    saveUser(user: UserSessionObj) {
-        user.email = UserSession.encryptString(user.email)
+    saveUser(user: User) {
+        // user.email = UserSession.encryptString(user.email)
         const serializedUser = JSON.stringify(user)
         sessionStorage.setItem(this.storageKey, serializedUser);
     }

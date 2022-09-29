@@ -1,5 +1,3 @@
-import { Dictionary } from "@reduxjs/toolkit";
-
 export class GoogleSpreadSheetFetch {
     private spreadSheetId: string
     private gid: string

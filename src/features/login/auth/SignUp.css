@@ -1,0 +1,7 @@
+.thumb { 
+    height: auto; 
+    cursor: pointer;
+    max-height:140px;/* using max-height property*/
+    max-width:250px;
+  }
+  

@@ -7,42 +7,79 @@ export const dateStringToTimestamp = (dateString: any) => {
   return date.getTime();
 };
 
+interface DataFrameInput {
+  data?: Array<Dictionary<any>> | undefined
+  df?: DataFrameJs | undefined
+}
 export class DataFrame {
-  private data: Array<Dictionary<any>>;
+
+  private data: Array<Dictionary<any>> | undefined;
   private df: DataFrameJs;
-  constructor(data: Array<Dictionary<any>>) {
-    this.data = data;
-    this.df = new DataFrameJs(this.data);
-  }
-  toTimestamp(df: DataFrameJs, column: string = "date", fromColumn: string = "Timestamp") {
+  constructor({ data = undefined, df = undefined }: DataFrameInput) {
+    this.data = data || undefined;
     /* @ts-ignore */
-    return df.map((row: any) =>
+    this.df = df || new DataFrameJs(this.data);
+  }
+  toTimestamp(column: string = "date", fromColumn: string = "Timestamp", inplace: boolean = false): DataFrame {
+    /* @ts-ignore */
+    const df = this.df.map((row: any) =>
       row.set(column, dateStringToTimestamp(row.get(fromColumn)))
-    ).sortBy(["date"], false);;
+    ).sortBy(["date"], true);
+    return this.initializeDataframe(df, inplace)
   }
-  locEquals(df: DataFrameJs, locKwargs: Dictionary<any>) {
+  locEquals(locKwargs: Dictionary<any>, inplace: boolean = false): DataFrame {
     /* @ts-ignore */
-    return df.filter((row: any) => {
+    const df: DataFrameJs = this.df.filter((row: any) => {
       const bools = Object.entries(locKwargs).reduce((isRow: any, [key, value]) => {
         return isRow && (row.get(key) === value)
       }, true)
       return bools;
     });
+    return this.initializeDataframe(df, inplace)
   }
-  dropDuplicates(locKwargs: Dictionary<any>): DataFrameJs {
-    const df = this.toTimestamp(this.df);
-    return this.locEquals(df, locKwargs)
+
+  loc(callBackFilter: any, inplace: boolean = false) {
+    const df = this.df.filter(callBackFilter)
+    return this.initializeDataframe(df, inplace)
   }
-  getLastUnique(locKwargs: Dictionary<any>): Dictionary<any> | undefined {
-    const df = this.dropDuplicates(locKwargs);
-    const itemDF = this.last(df);
+  dropDuplicatesEquals(locKwargs: Dictionary<any>): DataFrame {
+    const df = this.toTimestamp();
+    return df.locEquals(locKwargs)
+  }
+  getLastUniqueEquals(locKwargs: Dictionary<any>): Dictionary<any> | undefined {
+    const df = this.dropDuplicatesEquals(locKwargs);
+    const itemDF = df.last();
     const items = itemDF.toCollection();
     if (!items) {
       return undefined;
     }
     return items[0];
   }
-  last(df: DataFrameJs): any {
-    return df.tail(1);
+  last(): any {
+    return this.df.tail(1);
   }
+  dropDuplicates(...columnNames: string[]) {
+    const df = this.toTimestamp();
+    const dfSorted = df.sort(["date"], true)
+    const dfUnique = dfSorted.df.dropDuplicates(...columnNames)
+    return dfUnique
+  }
+  sort(columnNames: string | string[], reverse: boolean = true, missingValuesPosition?: string): DataFrame {
+    const df = this.df.sortBy(columnNames, reverse)
+    return this.initializeDataframe(df)
+  }
+  initializeDataframe(df: DataFrameJs, inplace: boolean = false): DataFrame {
+    if (inplace) {
+      this.df = df;
+      return this
+    }
+    return new DataFrame({ df: df, data: this.data })
+  }
+}
+
+export const fetchUniqueRecords = (records: any, ...columns: any) => {
+  const df = new DataFrame({ data: records })
+  const unique = df.dropDuplicates(...columns)
+  const uniqueRecords = unique.toCollection()
+  return uniqueRecords
 }

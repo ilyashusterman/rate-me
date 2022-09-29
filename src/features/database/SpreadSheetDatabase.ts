@@ -1,4 +1,4 @@
-import { fetchSpreadSheetJson } from "../google-spreadsheet"
+import { fetchSpreadSheetJson } from "./google-spreadsheet"
 
 export class SpreadSheetDatabase {
     private spreadSheetId: string

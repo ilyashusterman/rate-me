@@ -1,18 +1,17 @@
 import React from "react";
 import logo from "./logo.svg";
 import "./App.css";
-import FacebookLoginButton from "./features/login/FacebookLoginButton";
 import SearchUser from "./features/search/SearchUser";
-import { useAppSelector } from "./app/hooks";
-import { selectIsLoggedIn, selectUser } from "./features/login/userSlice";
 import { RatingUser } from "./features/rate/RatingUser";
 import { GreetingUser } from "./features/login/GeetingUser";
+import { AuthRoutes } from "./features/login/auth/AuthApp";
+import { SignUp } from "./features/login/auth/SignUp";
+import FacebookLoginButton from "./features/login/FacebookLoginButton";
 
 const RatingApp = () => {
-  const user = useAppSelector(selectUser);
   return (
     <>
-      <GreetingUser user={user} />
+      <GreetingUser />
       <SearchUser />
       <RatingUser />
     </>
@@ -23,18 +22,23 @@ const LoginApps = () => {
   return (
     <>
       <FacebookLoginButton />
+      {/* <Login /> */}
     </>
   );
 };
 
 const App = () => {
-  const isLoggedIn = useAppSelector(selectIsLoggedIn);
   return (
-    <div className="App">
+    <div>
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        {isLoggedIn ? <RatingApp /> : <LoginApps />}
       </header>
+      <AuthRoutes
+        LoginAuthPage={LoginApps}
+        AppPage={RatingApp}
+        AppPublicPage={LoginApps}
+        AppSignUp={SignUp}
+      />
     </div>
   );
 };

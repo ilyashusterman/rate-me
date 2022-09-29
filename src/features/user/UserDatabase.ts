@@ -1,20 +1,32 @@
-import { SpreadSheetDatabase } from "../database/SpreadSheetDatabase"
+import { Dictionary } from "@reduxjs/toolkit";
+import { DatabaseFB } from "../database/firebase";
+import { User } from "./user";
 
-export class UserDatabase extends SpreadSheetDatabase {
 
-    async getUsers() {
-        return await this.getRecords();
-    }
-    isUserExist(userId: string, users: Array<any>): boolean {
-        const user = users.find((user: any) => {
-            if (!user.hasOwnProperty("user_id")) {
-                return false;
-            }
-            return user.user_id === userId;
-        });
-        if (user !== null && user !== undefined) {
-            return true;
-        }
-        return false;
+export const initialSignUpUser = (): User => {
+    return {
+        name: "",
+        email: "",
+        facebookImageUrl: "",
+        facebookURL: "",
+        picture: "",
+        userId: "",
     };
+};
+
+export class UserDatabase extends DatabaseFB {
+
+    constructor() {
+        super("users/")
+    }
+    async getUsers(): Promise<Array<Dictionary<any>>> {
+        return Object.values(await this.all());
+    }
+    async saveUser(user: User) {
+        return await this.saveObj(`${this.endpoint}${user.userId}`, user)
+    }
+    async isUserExist(userId: string) {
+        const endpoint = `${this.endpoint}${userId}`
+        return await this.isRecordExist(endpoint)
+    }
 }
